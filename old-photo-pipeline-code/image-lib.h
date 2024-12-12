@@ -1,43 +1,58 @@
 #include "gd.h"
 
+
 /******************************************************************************
- * add_watermark()
+ * texture_image()
  *
  * Arguments: in - pointer to image
- *            watermark - pointer to image watermark
+ *            texture - pointer to texture image
  * Returns: out - pointer to image with watermark, or NULL in case of failure
  * Side-Effects: none
  *
  * Description: creates clone of image and puts a watermark on it
  *
  *****************************************************************************/
-gdImagePtr  add_watermark(gdImagePtr in_img, gdImagePtr watermark);
-/******************************************************************************
- * resize_image()
- *
- * Arguments: in - pointer to image
- *            new_width - new width to use in resizing
- * Returns: out - pointer to resized image, or NULL in case of failure
- * Side-Effects: none
- *
- * Description: creates clone of image with width and height scaled to target
- *              width
- *
- *****************************************************************************/
-gdImagePtr  resize_image(gdImagePtr in_img ,int new_width);
+gdImagePtr  texture_image(gdImagePtr in_img, gdImagePtr watermark);
+
+
 
 /******************************************************************************
- * make_thumb()
+ * smooth_image()
  *
  * Arguments: in - pointer to image
- *            size - target size for thumbnail
- * Returns: out - pointer to thumbnail image, or NULL in case of failure
+ * Returns: out - pointer to smoother image, or NULL in case of failure
  * Side-Effects: none
  *
- * Description: thumbnail of image with smalles dimension equal to target size
+ * Description: creates clone of image smoother
  *
  *****************************************************************************/
-gdImagePtr  make_thumb(gdImagePtr in_img, int size);
+gdImagePtr  smooth_image(gdImagePtr in_img);
+
+/******************************************************************************
+ * sepia_image()
+ *
+ * Arguments: in - pointer to image
+ * Returns: out - pointer to sepia image, or NULL in case of failure
+ * Side-Effects: none
+ *
+ * Description: creates clone of image but with sepia color
+ *
+ *****************************************************************************/
+gdImagePtr  sepia_image(gdImagePtr in_img);
+
+
+/******************************************************************************
+ * contrast_image()
+ *
+ * Arguments: in - pointer to image
+ * Returns: out - pointer to transformed image, or NULL in case of failure
+ * Side-Effects: none
+ *
+ * Description: creates clone of image but its contrast reduced
+ *
+ *****************************************************************************/
+gdImagePtr  contrast_image(gdImagePtr in_img);
+
 
 /******************************************************************************
  * read_png_file()
@@ -64,6 +79,33 @@ gdImagePtr read_png_file(char * file_name);
  *****************************************************************************/
 int write_png_file(gdImagePtr write_img, char * file_name);
 
+
+
+/******************************************************************************
+ * read_jpeg_file()
+ *
+ * Arguments: file_name - name of file with data for JPEG image
+ * Returns: img - the image read from file or NULL if failure to read
+ * Side-Effects: none
+ *
+ * Description: reads a PNG image from a file
+ *
+ *****************************************************************************/
+gdImagePtr read_jpeg_file(char * file_name);
+
+/******************************************************************************
+ * write_jpeg_file()
+ *
+ * Arguments: img - pointer to image to be written
+ *            file_name - name of file where to save JPEG image
+ * Returns: (bool) 1 in case of success, 0 in case of failure to write
+ * Side-Effects: none
+ *
+ * Description: writes a PNG image to a file
+ *
+ *****************************************************************************/
+int write_jpeg_file(gdImagePtr write_img, char * file_name);
+
 /******************************************************************************
  * create_directory()
  *
@@ -76,3 +118,6 @@ int write_png_file(gdImagePtr write_img, char * file_name);
  *
  *****************************************************************************/
 int create_directory(char * dir_name);
+
+
+struct timespec diff_timespec(const struct timespec *time1, const struct timespec *time0);
