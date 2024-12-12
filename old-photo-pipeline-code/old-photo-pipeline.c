@@ -28,19 +28,19 @@ int main(int argc, char* argv[]) {
     Check_Input_Args(argc, argv);
     Check_Dirs();
     files = Read_Files_List();
-    /*puts("Before sorting:)"); // Dbg purpose; to delete
-    for (size_t i = 0; i < n_img; i++)
+    puts("\nBefore sorting: "); // Dbg purpose; to delete
+    for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");*/
+    puts("\n");
     OrderFiles();
-    /*puts("After sorting:)"); // Dbg purpose; to delete
-     for (size_t i = 0; i < n_img; i++)
+    puts("After sorting: "); // Dbg purpose; to delete
+     for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");*/
+    puts("\n");
     Make_pipes();
     FinishTimingSerial();
     Processa_threads();
@@ -166,9 +166,7 @@ char** Read_Files_List() {
     bool isFileList = true;
     FILE* fp = 0;
     char* img_file = malloc(name_size * sizeof(char));
-    char* img_name = malloc(name_size * sizeof(char));
-	char* list = malloc(name_size * sizeof(char));
-	//sprintf(out_file_name, "%s%s", TEXTURE_DIR, files[i]);
+    char* list = malloc(name_size * sizeof(char));
 	sprintf(list, "%s/%s", IMG_DIR, IMG_LIST); 
     IMG_LIST = list;
     printf("Reading '%s'.\n", IMG_LIST);
@@ -184,38 +182,23 @@ char** Read_Files_List() {
     }
     if (isFileList) {
         Check_for_Images();
-        while (fgets(img_name, name_size, fp) != 0) {
-            img_file = strtok((char*)img_name, "\n");
-            img_name[strlen(img_name) - 1] = '\0';
-            if (!img_file) break;
-            char* file_format = strstr(img_file, image_format);
-            if (file_format != NULL && !strcmp(file_format, image_format)) n_img++;
+        while (fgets(img_file, name_size, fp) != 0) {
+            if (strlen(img_file) > 0 && img_file[strlen(img_file) - 1] == '\n') img_file[strlen(img_file) - 1] = '\0';
+            if (!img_file) continue;
+            if (Check_for_Extension(img_file, image_format)){
+                files[n_img] = (char*)malloc(name_size * sizeof(char));
+                if (!files[n_img]) {
+                    printf("Cannot process %s. Skipping this one.\n", files[n_img]);
+                    continue;
+                }
+                sprintf(files[n_img++], "%s", img_file);
+            }
         }
-        rewind(fp);
-        files = (char**)malloc(n_img * sizeof(char*));
-        if (!files) {
+       if (!files) {
             fclose(fp);
             puts("Cannot process images from list. Aborting.");
             fp = 0;
             exit(-1);
-        }
-        int i = 0;
-        while (fgets(img_name, name_size, fp) != 0) { //perhaps 'fscanf' is a better option: fscanf(fp, "%s", img_name); 
-            img_file = strtok((char*)img_name, "\n");
-            img_name[strlen(img_name) - 1] = '\0';
-            if (!img_file) continue;
-            char* file_format = strstr(img_file, image_format);
-            //printf("strstr: %s\n", file_format);  // Dbg purpose; to delete
-            if (file_format != NULL && !strcmp(file_format, image_format)) {
-                files[i] = (char*)malloc(name_size * sizeof(char));
-                if (!files[i]) {
-                    printf("Cannot process %s. Skipping this one.\n", img_name);
-                    continue;
-                } 
-                strcpy(files[i], img_file);
-                printf("Found image of '%s'.\n", files[i] );
-                i++;
-            }
         }
     } else {
         DIR* dir;
@@ -227,6 +210,7 @@ char** Read_Files_List() {
         struct dirent* entry;
         struct stat st;
         int i = 0;
+        img_file = malloc(name_size * sizeof(char));
         while ((entry = readdir(dir)) != NULL) {
             char* img_path;
             img_path = (char*)malloc(name_size * sizeof(char));
@@ -234,25 +218,23 @@ char** Read_Files_List() {
             if (!stat(img_path, &st)) {
                 if (S_ISREG(st.st_mode)) {
                     if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
-                    sprintf(img_name, "%s", entry->d_name);
-                    img_name[sizeof(entry->d_name) - 1] = '\0';
-                    if (Check_for_Extension(img_name, image_format)) {
+                    sprintf(img_file, "%s", entry->d_name);
+                    img_file[sizeof(entry->d_name) - 1] = '\0';
+                    if (Check_for_Extension(img_file, image_format)) {
                         files[i] = (char*)malloc(name_size * sizeof(char));
                         if (!files[i]) {
                             printf("Cannot process %s. Skipping this one.\n", files[i]);
                             free(img_path);
                             continue;
                         }
-                        sprintf(files[i], "%s", img_name);
-                        //strcpy(files[i], img_name);
-                        printf("Found image of '%s'.\n", files[i] );
-                        i++;
+                        sprintf(files[i++], "%s", img_file);
                         n_img++;
                     }
                 }
             }
             free(img_path);
         }
+        free(img_file);
         if(dir) closedir(dir);
     }
     if (fp) {

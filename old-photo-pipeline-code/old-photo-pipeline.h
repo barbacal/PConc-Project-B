@@ -42,9 +42,9 @@ char* IMG_DIR = 0;
 //pthread_barrier_t bar; // barrier for threads; expeimental for for self learning
 
 int n_threads = 0;                // Default threads (besides main)
-const char* jpg_file = ".jpg\0";          // type of image format (in this case JPG)
-const char* jpeg_file = ".jpeg\0";        // type of image format (in this case JPEG)
-const char* png_file = ".png\0";          // type of image format (in this case PNG)
+const char* jpg_file = ".jpg";          // type of image format (in this case JPG)
+const char* jpeg_file = ".jpeg";        // type of image format (in this case JPEG)
+const char* png_file = ".png";          // type of image format (in this case PNG)
 char* image_format = 0;            // type of image format 
 int n_img = 0;                    // number of images to process
 char** files = 0;                 // array of images to process

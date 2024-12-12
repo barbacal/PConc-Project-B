@@ -26,8 +26,8 @@ int Texturing(int file) {
 		fprintf(stderr, "Impossible to read %s image\n", "paper-texture.png");
 		free(out_file_name);
 		free(img_from_dir);
-		gdImageDestroy(in_img);
-		gdImageDestroy(texture_img);
+		//gdImageDestroy(in_img);
+		//gdImageDestroy(texture_img);
 		gdImageDestroy(out_texture_img);
 		return -1;
 	} else 	printf("Texture '%s'\n", files[file]);;
