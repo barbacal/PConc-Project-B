@@ -14,12 +14,12 @@
 /****************************************************************************************************
  * main()                                                                                           *                                                                               
  *                                                                                                  *
- * Arguments: (PNG_DIR_NAME, #THREADS)                                                              *
+ * Arguments: (IMG_DIR_NAME, #THREADS, ORDERING_OPTION)                                             *                 *
  * Returns: 0 in case of sucess, -1 in case of failure                                              *
- * Side-Effects: creates watermarked, watermarked thumbnail, watermarked resized copies of images   *
+ * Side-Effects: creates contrasted, textured, smoothed and sepia copies of images                  *
  *                                                                                                  *
  * Description: implementation of the parallelized old-photoserial version                          *
- *  This application works for a non fixed pre-defined set of PNG, JPEG or JPG files                *
+ *  This application works for a non fixed pre-defined set of JPEG or JPG files                     *
  *                                                                                                  * 
  ***************************************************************************************************/
 
@@ -28,19 +28,19 @@ int main(int argc, char* argv[]) {
     Check_Input_Args(argc, argv);
     Check_Dirs();
     files = Read_Files_List();
-    puts("\nBefore sorting: "); // Dbg purpose; to delete
+    /*puts("\nBefore sorting: "); // Dbg purpose; to delete or uncomment
     for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");
+    puts("\n");*/
     OrderFiles();
-    puts("After sorting: "); // Dbg purpose; to delete
+    /*puts("After sorting: "); // Dbg purpose; to delete
      for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");
+    puts("\n");*/
     Make_pipes();
     FinishTimingSerial();
     Processa_threads();
@@ -68,10 +68,36 @@ void* Processa_threads() {
         pthread_create(&stage3_threads[i], 0, Processa_texture, 0);
         // printf("Stage 4 thread %d creation\n", i + 1); // Dbg purpose; to delete or uncomment
         pthread_create(&stage4_threads[i], 0, Processa_sepia, 0);
-
     }
-
-    int notification = 1; //1: pipe on; 0: pipe off ????
+    /*for (int i = 0; i < n_threads; i++) {
+        //printf("%dth thread junction.\n", i + 1); // Dbg purpose; to delete
+        pthread_join(stage1_threads[i], NULL);
+        long int thr_id = pthread_self();
+        clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
+        GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
+    } 
+    for (int i = 0; i < n_threads; i++) {
+        //printf("%dth thread junction.\n", i + 1); // Dbg purpose; to delete
+        pthread_join(stage2_threads[i], NULL);
+        long int thr_id = pthread_self();
+        clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
+        GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
+    }
+    for (int i = 0; i < n_threads; i++) {
+        //printf("%dth thread junction.\n", i + 1); // Dbg purpose; to delete
+        pthread_join(stage3_threads[i], NULL);
+        long int thr_id = pthread_self();
+        clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
+        GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
+    }
+    for (int i = 0; i < n_threads; i++) {
+        //printf("%dth thread junction.\n", i + 1); // Dbg purpose; to delete
+        pthread_join(stage4_threads[i], NULL);
+        long int thr_id = pthread_self();
+        clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
+        GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
+    }*/
+    int notification = 1; //1: pipe on; 0: pipe off; double check
     int file_index = 0;
     int n_files = n_img;
     while (n_img != 0) {
@@ -81,6 +107,8 @@ void* Processa_threads() {
             file_index++;
             write(notifier_fd[1], &notification, sizeof(notification)); //Stage 2 notifier
             write(notifier_fd[1], &notification, sizeof(notification)); //Stage 3 notifier
+            write(notifier_fd[1], &notification, sizeof(notification)); //Stage 4 notifier
+
         }
         if (n_img == 0) notification = 0;
     }
@@ -330,7 +358,6 @@ void* Processa_contrast(){
     if (notification == 0) pthread_exit(NULL);
     while (notification == 1) {
         read(stg1_pipe_fd[0], &next_file, sizeof(next_file));
-        //printf("next_file: %d\n", next_file);
         Contrasting(next_file);
         write(stg2_pipe_fd[1], &next_file, sizeof(next_file));
     }
@@ -358,8 +385,7 @@ void* Processa_texture(){
     while (notification == 1) { 
         read(stg3_pipe_fd[0], &next_file, sizeof(next_file));
         Texturing(next_file);
-        n_img--;
-       // printf("n_img: %d\n", n_img); // Dbg purpose; to delete
+        write(stg4_pipe_fd[1], &next_file, sizeof(next_file));
     }
     pthread_exit(NULL);
 }
@@ -373,7 +399,6 @@ void* Processa_sepia(){
         read(stg4_pipe_fd[0], &next_file, sizeof(next_file));
         Sepiaing(next_file);
         n_img--;
-       // printf("n_img: %d\n", n_img); // Dbg purpose; to delete
     }
     pthread_exit(NULL);
 }

@@ -10,9 +10,10 @@
 #include <string.h>
 #include <unistd.h>
 #include "image-lib.h"
+#include <stdbool.h>
 
 
-extern char* OLD_PHOTO_PAR_A;
+extern char* OLD_PHOTO_PAR_B;
 extern char* CONTRAST_DIR;
 extern char* SMOOTH_DIR;
 extern char* TEXTURE_DIR;

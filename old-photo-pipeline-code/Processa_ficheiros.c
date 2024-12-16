@@ -19,31 +19,41 @@ int Texturing(int file) {
 	}
 	gdImagePtr in_img,  texture_img;
 	/* output image */
-	gdImagePtr out_texture_img; 
-    texture_img = read_png_file("./old-photo-parallel-B-code/paper-texture.png");
+	gdImagePtr out_texture_img;
+	bool texture_exists = true; 
+    texture_img = read_png_file("./old-photo-pipeline-code/paper-texture.png");
 	if(!texture_img) {
 		puts("No Texture...");
-		fprintf(stderr, "Impossible to read %s image\n", "paper-texture.png");
-		free(out_file_name);
-		free(img_from_dir);
-		//gdImageDestroy(in_img);
-		//gdImageDestroy(texture_img);
-		gdImageDestroy(out_texture_img);
-		return -1;
-	} else 	printf("Texture '%s'\n", files[file]);;
-	/* load of the input file */
-    in_img = read_jpeg_file(img_from_dir);
-	out_texture_img = texture_image(in_img, texture_img);
-  	if (!out_texture_img) {
-        fprintf(stderr, "Impossible to create texture of %s image\n", files[file]);
-    } else {
-		/* save texture */
-		if(!write_jpeg_file(out_texture_img, out_file_name)) fprintf(stderr, "Impossible to write %s image\n", out_file_name);
+		fprintf(stderr, "Impossible to read %s image. Skipping.\n", "paper-texture.png");
+		texture_exists = false;
+	} 
+	if (texture_exists) { 
+		printf("Texture '%s'\n", files[file]);;
+		/* load of the input file */
+    	in_img = read_jpeg_file(img_from_dir);
+		if (!in_img)
+			printf("Impossible to read %s image\n", img_from_dir);
+			out_texture_img = texture_image(in_img, texture_img);
+			gdImageDestroy(texture_img);
+
+		if (!out_texture_img) //{
+        	fprintf(stderr, "Impossible to create texture of %s image\n", files[file]);
+    		/* save texture */
+			if(!write_jpeg_file(out_texture_img, out_file_name)){
+				fprintf(stderr, "Impossible to write %s image\n", out_file_name);
+				res = -1;
+			}
+			gdImageDestroy(out_texture_img);
+	} else {
+		puts("Texture does not exist.");
+		in_img = read_jpeg_file(img_from_dir);
+		if (!in_img) //{
+			printf("Impossible to read %s image\n", img_from_dir);
+			if(!write_jpeg_file(in_img, out_file_name))		
+				fprintf(stderr, "Impossible to write %s image\n", out_file_name);
 			res = -1;
-		}
+	}
 	gdImageDestroy(in_img);
-	gdImageDestroy(out_texture_img);
-	gdImageDestroy(texture_img);
 	free(out_file_name);
 	free(img_from_dir);
 	return res;//exit(0);
@@ -167,8 +177,8 @@ int Sepiaing(int file) {
 int Check_existing_image(char* img_file) {
 	int res = 0;
 	if (access(img_file, F_OK) != -1) {
-		//printf("%s encontrado\n", img_file);
+		printf("%s encontrado\n", img_file);
 		res = 1;
-	} else res = 1;//printf("%s nao encontrado\n", img_file);
+	} else printf("%s nao encontrado\n", img_file);
 	return res;
 }
