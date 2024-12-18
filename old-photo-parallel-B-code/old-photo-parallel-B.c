@@ -61,6 +61,10 @@ void* Parallelize_Serial() {
     }
     for (int i = 0; i < n_threads; i++) {
         pthread_join(thread_id[i], NULL/*&thread_ret*/);
+        if (!do_piping) {
+            close(img_pipe_fd[0]); //Close read
+            close(img_pipe_fd[1]); //Close write
+        }
         long int thr_id = pthread_self();
         clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
         GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
@@ -71,7 +75,7 @@ void* Parallelize_Serial() {
 
 void* Processa_threads() {
     int file;
-    read(img_pipe_fd[0], &file, sizeof(file));
+    /*if (do_piping) */read(img_pipe_fd[0], &file, sizeof(file));// else return (void*)0;
     Processa_contrast(file);
     Processa_smooth(file);
     Processa_texture(file);
@@ -406,23 +410,28 @@ void* Make_pipe() {
             file_index++;
             n_img--;
         }
+        if (!n_img) do_piping = false; //Stop piping
     }
 
 }
 
 void* Processa_contrast(int next_file){
     Contrasting(next_file);
+    return (void*)0;
 }
 
 void* Processa_smooth(int next_file) {
     Smoothing(next_file);
+    return (void*)0;
 }
 
 void* Processa_texture(int next_file){
     Texturing(next_file);
+    return (void*)0;
 }
 
 void* Processa_sepia(int next_file){;
     Sepiaing(next_file);
+    return (void*)0;
 }
 
