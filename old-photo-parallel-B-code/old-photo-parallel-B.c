@@ -27,19 +27,19 @@ int main(int argc, char* argv[]) {
     Check_Input_Args(argc, argv);
     Check_Dirs();
     files = Read_Files_List();
-    puts("Before sorting:)"); // Dbg purpose; to delete
+   /* puts("Before sorting:)"); // Dbg purpose; to delete or uncomment  to check
     for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");
+    puts("\n");*/
     OrderFiles();
-    puts("After sorting:)"); // Dbg purpose; to delete
+    /*puts("After sorting:)"); // Dbg purpose; to delete or uncomment to check
      for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");
+    puts("\n");*/
     Make_pipe();
     FinishTimingSerial();
     Parallelize_Serial();
@@ -71,7 +71,6 @@ void* Parallelize_Serial() {
         clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
         GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
     }
-   // stop_stats &= true;
     //pthread_join(stats_thread, NULL/*&thread_ret*/);
     pthread_mutex_destroy(&stats_mux);
     free(start_time_par);
@@ -94,9 +93,12 @@ pipe:
     pthread_mutex_lock(&stats_mux);
     n_img_processed++;
     n_img_to_process--;
-    if (n_img_to_process == 0) stop_stats = true;
+    if (n_img_to_process == 0) {
+        stop_stats = true;
+        do_piping = false;
+    }
     pthread_mutex_unlock(&stats_mux); 
-    if (!stop_stats) goto pipe;  
+    if (!stop_stats && do_piping) goto pipe;  
     return (void*)0;
 }
 
@@ -425,7 +427,7 @@ void* Make_pipe() {
     int file_index = 0;
     int n_files = n_img;
     n_img_to_process = n_files;
-    while (n_img != 0) {
+    while (n_img != 0 && do_piping) {
         for (int i = 0; i < n_threads && file_index < n_files; i++) {
             write(img_pipe_fd[1], &file_index, sizeof(file_index));    //Start piping
             file_index++;

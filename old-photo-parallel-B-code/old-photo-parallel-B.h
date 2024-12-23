@@ -37,7 +37,7 @@ char* IMG_LIST =   "image-list.txt";
 /* The directory where input files will be picked */
 char* IMG_DIR = 0;
 
-bool do_piping = true; // Flag to close pipe
+bool do_piping = true; // Flag to pipe
 pthread_mutex_t stats_mux = PTHREAD_MUTEX_INITIALIZER;
 
 int n_threads = 0;                // Default threads (besides main)
