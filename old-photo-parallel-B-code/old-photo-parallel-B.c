@@ -27,19 +27,19 @@ int main(int argc, char* argv[]) {
     Check_Input_Args(argc, argv);
     Check_Dirs();
     files = Read_Files_List();
-    /*puts("Before sorting:)"); // Dbg purpose; to delete
-    for (size_t i = 0; i < n_img; i++)
+    puts("Before sorting:)"); // Dbg purpose; to delete
+    for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");*/
+    puts("\n");
     OrderFiles();
-    /*puts("After sorting:)"); // Dbg purpose; to delete
-     for (size_t i = 0; i < n_img; i++)
+    puts("After sorting:)"); // Dbg purpose; to delete
+     for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");*/
+    puts("\n");
     Make_pipe();
     FinishTimingSerial();
     Parallelize_Serial();
@@ -51,13 +51,15 @@ int main(int argc, char* argv[]) {
 
 void* Parallelize_Serial() {
     pthread_t thread_id[n_threads];
+    //pthread_t stats_thread;
     /*void* thread_ret;*/
     /*int ret_val;*/
     start_time_par = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
     end_time_par = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
+    //pthread_create(&stats_thread, 0, Mostra_stats, 0);
     for (int i = 0; i < n_threads; i++) {
         clock_gettime(CLOCK_REALTIME, &start_time_par[i]);
-        pthread_create(&thread_id[i], 0, Processa_threads, 0);
+        pthread_create(&thread_id[i], 0, Processa_threads, 0);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
     }
     for (int i = 0; i < n_threads; i++) {
         pthread_join(thread_id[i], NULL/*&thread_ret*/);
@@ -69,17 +71,32 @@ void* Parallelize_Serial() {
         clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
         GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
     }
+   // stop_stats &= true;
+    //pthread_join(stats_thread, NULL/*&thread_ret*/);
+    pthread_mutex_destroy(&stats_mux);
+    free(start_time_par);
+    free(end_time_par); //falta o resto
     //threads = 0;
     return (void*)0;    
 }
 
 void* Processa_threads() {
+pipe:
+    pthread_mutex_lock(&stats_mux);
+    if (stop_stats && !do_piping) pthread_exit(NULL);
+    pthread_mutex_unlock(&stats_mux);
     int file;
-    /*if (do_piping) */read(img_pipe_fd[0], &file, sizeof(file));// else return (void*)0;
+    read(img_pipe_fd[0], &file, sizeof(file));
     Processa_contrast(file);
     Processa_smooth(file);
     Processa_texture(file);
-    Processa_sepia(file);    
+    Processa_sepia(file);
+    pthread_mutex_lock(&stats_mux);
+    n_img_processed++;
+    n_img_to_process--;
+    if (n_img_to_process == 0) stop_stats = true;
+    pthread_mutex_unlock(&stats_mux); 
+    if (!stop_stats) goto pipe;  
     return (void*)0;
 }
 
@@ -240,7 +257,7 @@ char** Read_Files_List() {
 }
 
 void* FreeAlloc() {
-    free(files);
+    free(files);// falta o resto
     return (void*)0;
 }
 
@@ -329,8 +346,7 @@ void* FinishTimingSerial() {
     FILE *fp;
     char* timing = (char*)malloc(100 * sizeof(char));
     timing_file = (char*)malloc(100 * sizeof(char));
-    sprintf(timing_file, "%s%s", IMG_DIR,"/timing_");
-    timing_file = strcat(timing_file, "<");
+    sprintf(timing_file, "%s%s", IMG_DIR,"/timing_B_<");
     char* str_n_threads = (char*)malloc(3 * sizeof(char));
     sprintf(str_n_threads, "%d", n_threads);
     timing_file = strcat(timing_file, str_n_threads);
@@ -402,8 +418,13 @@ void* Make_pipe() {
         printf("error creating the pipe. Exiting.\n");
         exit(-1);
     }
+    if (n_threads > n_img){
+        printf("Less images than threads. Processing %d threads, one per image.\n", n_img);
+        n_threads = n_img;
+    }
     int file_index = 0;
     int n_files = n_img;
+    n_img_to_process = n_files;
     while (n_img != 0) {
         for (int i = 0; i < n_threads && file_index < n_files; i++) {
             write(img_pipe_fd[1], &file_index, sizeof(file_index));    //Start piping
@@ -412,10 +433,10 @@ void* Make_pipe() {
         }
         if (!n_img) do_piping = false; //Stop piping
     }
-
+    return (void*)0;
 }
 
-void* Processa_contrast(int next_file){
+void* Processa_contrast(int next_file) {
     Contrasting(next_file);
     return (void*)0;
 }
@@ -425,13 +446,59 @@ void* Processa_smooth(int next_file) {
     return (void*)0;
 }
 
-void* Processa_texture(int next_file){
+void* Processa_texture(int next_file) {
     Texturing(next_file);
     return (void*)0;
 }
 
-void* Processa_sepia(int next_file){;
+void* Processa_sepia(int next_file) {
     Sepiaing(next_file);
     return (void*)0;
 }
 
+void* Processa_stats() {
+    //pthread_mutex_lock(&stats_mux);
+    printf("Number of images processed: %d\n", n_img_processed);
+    printf("Number of images to process: %d\n", n_img_to_process);
+    //pthread_mutex_unlock(&stats_mux);
+    return (void*)0;
+}
+
+void* Mostra_stats() {
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    if (flags == -1) {
+        puts("Not possible to show stats. Skipping.");  //Check another solution, if time allows 
+        return (void*)-1;
+    }
+    if (fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK) == -1) {
+       puts("fcntl F_SETFL");
+        puts("Not possible to show stats. Skipping.");
+        return (void*)-1;
+    }
+
+    int stats_request;
+    pthread_mutex_lock(&stats_mux);
+    bool stop = stop_stats;
+    bool piping = n_img_to_process && !stop;     // inner flag to close stats thread
+    pthread_mutex_unlock(&stats_mux);
+    while (!stop) {
+        while (piping) {
+            if (!piping) break;
+           // puts("!");
+           //pthread_mutex_lock(&stats_mux);
+            if ((stats_request = getc(stdin)) != EOF) {    
+                if (stats_request != '\n') while (getc(stdin) != '\n');
+                if (toupper(stats_request) == 'S') {
+                    Processa_stats();      
+                    puts("!!");                
+                }
+            } else stop = true;
+            pthread_mutex_lock(&stats_mux);
+            stop = stop_stats;
+            piping = n_img_to_process && !stop;     // inner flag to close stats thread
+            pthread_mutex_unlock(&stats_mux);
+            break;
+        }
+    }
+    return (void*)0;
+}

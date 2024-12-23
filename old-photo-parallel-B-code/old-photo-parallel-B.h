@@ -10,7 +10,8 @@
 //#include <linux/time.h> //CLOCK_MONOTONIC not available in my Ubuntu PC
 #include <time.h>
 //#include <sys/time.h>
-//#include <errno.h>
+#include <errno.h>
+#include <fcntl.h>
 
 struct timespec start_time_total, end_time_total;
 struct timespec start_time_ser, end_time_ser;
@@ -37,7 +38,7 @@ char* IMG_LIST =   "image-list.txt";
 char* IMG_DIR = 0;
 
 bool do_piping = true; // Flag to close pipe
-
+pthread_mutex_t stats_mux = PTHREAD_MUTEX_INITIALIZER;
 
 int n_threads = 0;                // Default threads (besides main)
 const char* jpg_file = ".jpg";          // type of image format (in this case JPG)
@@ -46,6 +47,9 @@ const char* png_file = ".png";          // type of image format (in this case PN
 char* image_format = 0;            // type of image format 
 int n_img = 0;                    // number of images to process
 char** files = 0;                 // array of images to process
+int n_img_to_process = 0;         // number of images to process
+int n_img_processed = 0;          // number of images processed
+bool stop_stats = false;          // outer flag to close stats thread
 
 // 2 files descriptors used to write and read on the image pipe
 int img_pipe_fd[2];
@@ -69,4 +73,6 @@ void* Make_pipe();
 void* Processa_contrast(int file);
 void* Processa_smooth(int file);
 void* Processa_texture(int file);
-void* Processa_sepia(int file); 
+void* Processa_sepia(int file);
+void* Processa_stats();
+void* Mostra_stats();

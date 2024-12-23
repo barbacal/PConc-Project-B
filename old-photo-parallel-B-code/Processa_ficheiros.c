@@ -84,7 +84,7 @@ int Contrasting(int file) {
 		printf("Impossible to read %s image\n", img_from_dir);
 		}
 	out_contrast_img = contrast_image(in_img);
-  	if (!out_contrast_img) fprintf(stderr, "Impossible to resize %s image\n", files[file]);
+  	if (!out_contrast_img) fprintf(stderr, "Impossible to contrast %s image\n", files[file]);
     else {
 		/* save resized image*/
 		if(!write_jpeg_file(out_contrast_img, out_file_name)) fprintf(stderr, "Impossible to write %s image\n", out_file_name);
@@ -122,7 +122,7 @@ int Smoothing(int file) {
 	}
 	/* creation of thumbnail from image */
 	out_smooth_img = smooth_image(in_img);
-	if (!out_smooth_img) fprintf(stderr, "Impossible to creat thumbnail of %s image\n", files[file]);
+	if (!out_smooth_img) fprintf(stderr, "Impossible to create smooth of %s image\n", files[file]);
     else {
 		/* save thumbnail image */
 		if(!write_jpeg_file(out_smooth_img, out_file_name)) fprintf(stderr, "Impossible to write %s image\n", out_file_name);
@@ -160,7 +160,7 @@ int Sepiaing(int file) {
 	}
 	/* creation of thumbnail from image */
 	out_sepia_img = sepia_image(in_img);
-	if (!out_sepia_img) fprintf(stderr, "Impossible to creat thumbnail of %s image\n", files[file]);
+	if (!out_sepia_img) fprintf(stderr, "Impossible to create sepia of %s image\n", files[file]);
     else {
 		/* save thumbnail image */
 		if(!write_jpeg_file(out_sepia_img, out_file_name)) fprintf(stderr, "Impossible to write %s image\n", out_file_name);
