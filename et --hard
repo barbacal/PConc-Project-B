@@ -1,0 +1,59 @@
+[33mcommit 07e8efedb18099697918ef3cbdb21d2967a876aa[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: barbacal <bartolomeu.rabacal@tecnico.ulisboa.pt>
+Date:   Mon Dec 23 12:19:52 2024 +0000
+
+    Finished debugging last commit.
+
+[33mcommit 17ced518c62a2e0cd79044de0f81483927a9d496[m
+Author: barbacal <bartolomeu.rabacal@tecnico.ulisboa.pt>
+Date:   Mon Dec 23 10:49:22 2024 +0000
+
+    Corrected flow oi pipe and threads.
+
+[33mcommit ca2e7d8b098fe25c9cf0e023d3a69f912c6d767d[m
+Author: barbacal <bartolomeu.rabacal@tecnico.ulisboa.pt>
+Date:   Wed Dec 18 15:09:05 2024 +0000
+
+    Finished debugging. To do timings
+
+[33mcommit 723106702d962a5e792f1384b9dc35f3e870835c[m
+Author: barbacal <bartolomeu.rabacal@tecnico.ulisboa.pt>
+Date:   Tue Dec 17 16:35:11 2024 +0000
+
+     Refactoring old-photo-parallel-A to old-photo-parallel-B with piping from old-photo-pipeline
+
+[33mcommit f52939d6bd3cf88db547055ffc169509f07ccfe7[m
+Author: barbacal <bartolomeu.rabacal@tecnico.ulisboa.pt>
+Date:   Mon Dec 16 15:26:34 2024 +0000
+
+    Pipes and threads ok. Missing parallel timing.
+
+[33mcommit 586840c02b82c649a72f561f2f46e37e323c77c8[m
+Author: barbacal <bartolomeu.rabacal@tecnico.ulisboa.pt>
+Date:   Thu Dec 12 20:39:23 2024 +0000
+
+    Corrected image file list reading
+
+[33mcommit 29157a5cf83c1858479ea9f9ea38c2c308df7a78[m
+Author: barbacal <bartolomeu.rabacal@tecnico.ulisboa.pt>
+Date:   Thu Dec 12 16:33:29 2024 +0000
+
+    old-photo-pipeline reafactored. Started debugging.
+
+[33mcommit c5d5ac0ce936d81b16aa6187a5a6fd427caeae37[m
+Author: barbacal <bartolomeu.rabacal@tecnico.ulisboa.pt>
+Date:   Thu Dec 12 12:53:50 2024 +0000
+
+    git C ignore file added
+
+[33mcommit a4aa20d7acf1da65084e8cbb73a42410916364cc[m
+Author: barbacal <bartolomeu.rabacal@tecnico.ulisboa.pt>
+Date:   Thu Dec 12 12:47:57 2024 +0000
+
+    ap-paralelo-3 code added to be refactored in old-photo-pipeline
+
+[33mcommit 76988149ebb7465cbbbd78cf5d9610c5a3aa057f[m
+Author: barbacal <bartolomeu.rabacal@tecnico.ulisboa.pt>
+Date:   Thu Dec 12 12:45:32 2024 +0000
+
+    ap-paralelo-3 code added to be refactored in old-photo-pipeline

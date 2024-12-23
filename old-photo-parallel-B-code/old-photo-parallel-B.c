@@ -95,11 +95,11 @@ pipe:
     n_img_to_process--;
     if (n_img_to_process == 0) {
         stop_stats = true;
-        do_piping = false;
-    }
+        //do_piping = false;
+    }                                                                                                                                                                                               
     pthread_mutex_unlock(&stats_mux); 
     if (!stop_stats && do_piping) goto pipe;  
-    return (void*)0;
+    return (void*)0;    
 }
 
 void* Check_Dirs() {
@@ -428,7 +428,7 @@ void* Make_pipe() {
     int n_files = n_img;
     n_img_to_process = n_files;
     while (n_img != 0 && do_piping) {
-        for (int i = 0; i < n_threads && file_index < n_files; i++) {
+        for (/*int i = 0; i < n_threads  &&*/; file_index < n_files; /*i++*/) {
             write(img_pipe_fd[1], &file_index, sizeof(file_index));    //Start piping
             file_index++;
             n_img--;
