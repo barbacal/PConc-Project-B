@@ -27,19 +27,19 @@ int main(int argc, char* argv[]) {
     Check_Input_Args(argc, argv);
     Check_Dirs();
     files = Read_Files_List();
-   /* puts("Before sorting:)"); // Dbg purpose; to delete or uncomment  to check
+    puts("Before sorting:)"); // Dbg purpose; to delete or uncomment  to check
     for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");*/
+    puts("\n");
     OrderFiles();
-    /*puts("After sorting:)"); // Dbg purpose; to delete or uncomment to check
+    puts("After sorting:)"); // Dbg purpose; to delete or uncomment to check
      for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");*/
+    puts("\n");
     Make_pipe();
     FinishTimingSerial();
     Parallelize_Serial();
@@ -56,7 +56,7 @@ void* Parallelize_Serial() {
     /*int ret_val;*/
     start_time_par = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
     end_time_par = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
-    pthread_create(&stats_thread, 0, Mostra_stats, 0);
+    //pthread_create(&stats_thread, 0, Mostra_stats, 0);
     for (int i = 0; i < n_threads; i++) {
         clock_gettime(CLOCK_REALTIME, &start_time_par[i]);
         pthread_create(&thread_id[i], 0, Processa_threads, 0);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
@@ -71,7 +71,7 @@ void* Parallelize_Serial() {
         clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
         GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
     }
-    pthread_join(stats_thread, NULL/*&thread_ret*/);
+    //pthread_join(stats_thread, NULL/*&thread_ret*/);
     pthread_mutex_destroy(&stats_mux);
     free(start_time_par);
     free(end_time_par); //falta o resto
@@ -80,9 +80,13 @@ void* Parallelize_Serial() {
 }
 
 void* Processa_threads() {
+    bool piping = false;
 pipe:
     pthread_mutex_lock(&stats_mux);
-    if (stop_stats && !do_piping) pthread_exit(NULL);
+    if (stop_stats && !do_piping && !piping) {
+        pthread_mutex_unlock(&stats_mux);
+        pthread_exit(NULL);
+    } 
     pthread_mutex_unlock(&stats_mux);
     int file;
     read(img_pipe_fd[0], &file, sizeof(file));
@@ -93,13 +97,17 @@ pipe:
     pthread_mutex_lock(&stats_mux);
     n_img_processed++;
     n_img_to_process--;
-    bool not_piping = !do_piping;
-    if (n_img_to_process == 0) {
+    if (!do_piping) piping = !stop_stats &&  n_img - n_img_processed > 1;
+    else piping = !stop_stats && (n_img_processed < n_img);
+    if (n_img_to_process == 0 /*|| !piping*/) {
         stop_stats = true;
-        not_piping = true;
+        piping = false;
+    }                                                                                                                                                                                        
+    if (!stop_stats && piping) {
+        pthread_mutex_unlock(&stats_mux);
+        goto pipe;
     }
-    pthread_mutex_unlock(&stats_mux);                                                                                                                                                                                         
-    if (!stop_stats && !not_piping) goto pipe;  
+    pthread_mutex_unlock(&stats_mux);  
     pthread_exit(NULL);    
 }
 
@@ -120,6 +128,7 @@ void* Check_Dirs() {
     if ((res = create_directory(CONTRAST_DIR)) == 0) {
 		printf("'%s' created.\n", CONTRAST_DIR);
 	} else if (res == 1) fprintf(stderr, "'%s' already exists.\n", CONTRAST_DIR);
+    //free(dir);
     dir = (char*)malloc((img_dir_len + strlen(SMOOTH_DIR) + 1) * sizeof(char));
     sprintf(dir, "%s%s", IMG_DIR, SMOOTH_DIR);
      
@@ -176,7 +185,7 @@ void* Check_Input_Args(int argc, char* argv[]) {
 }
 
 char** Read_Files_List() {
-    const int name_size = 100; // maximum size in chars of an image filename
+    const int name_size = 1000; // maximum size in chars of an image filename
     files = (char**)malloc(name_size * sizeof(char*));
     bool isFileList = true;
     FILE* fp = 0;
@@ -187,7 +196,7 @@ char** Read_Files_List() {
     printf("Reading '%s'.\n", IMG_LIST);
     fp = fopen(IMG_LIST, "r");
     if (!fp) {
-        fprintf(stderr, "File %s can't be opened or does not exist.\n", IMG_LIST);
+        fprintf(stderr, "File '%s' can't be opened or does not exist.\n", IMG_LIST);
         isFileList = false;
         puts("Checking for images in image folder.");
         if (!Check_for_Images()) {
@@ -268,7 +277,7 @@ bool Check_for_Images() {
     bool res = false;
     int n_formats = 2;
     const char* file_format[3] = {png_file, jpg_file, jpeg_file}; //Assumes either PNG, JPG or JPEG or empty folder
-    const int name_size = 100; // maximum size in chars of an image filename
+    const int name_size = 1000; // maximum size in chars of an image filename
     char img_name[name_size];
     DIR* dir;
  loop:  dir = opendir(IMG_DIR);
@@ -427,11 +436,12 @@ void* Make_pipe() {
     }
     int file_index = 0;
     n_img_to_process = n_img;
+    int counter = n_img;
     while (do_piping) {
         write(img_pipe_fd[1], &file_index, sizeof(file_index));    //Start piping
         file_index++;
-        n_img--;
-        if (!n_img) do_piping = false; //Stop piping
+        counter--;
+        if (!counter) do_piping = false; //Stop piping
     }
     return (void*)0;
 }

@@ -192,28 +192,21 @@ gdImagePtr read_jpeg_file(char * file_name){
 
 	FILE * fp;
 	gdImagePtr read_img;
+
 	fp = fopen(file_name, "rb");
-  // 	puts("read_jpeg_file1:");
    	if (!fp) {
-//		puts(file_name);
 		fprintf(stderr, "Can't read image %s\n", file_name);
 		return NULL;
 	}
 	if (!fp) {
-//		puts(file_name);
         fprintf(stderr, "Can't read image %s\n", file_name);
         return NULL;
     }
-	//puts("read_jpeg_file2");
     read_img = gdImageCreateFromJpeg(fp);
-   // puts("read_jpeg_file3");
 	if (fp) fclose(fp);
-	// puts("read_jpeg_file3");
   	if (read_img == NULL) {
-	//	puts("read_jpeg_file5");
     	return NULL;
     }
-//puts("read_jpeg_file6");
 	return read_img;
 }
 
@@ -260,7 +253,7 @@ int create_directory(char * dir_name){
 		//if (mkdir(dir_name, 0777)!=0){
 		int res;
 		//fprintf(stderr, "%s: dir_name\n", dir_name);
-		char mk_dir[100];
+		char mk_dir[1000];
 		sprintf(mk_dir, "mkdir -p %s", dir_name);
 		if ((res = system(mk_dir)) != 0) {
 			fprintf(stderr, "'%s': Error creating folder.\n", dir_name);

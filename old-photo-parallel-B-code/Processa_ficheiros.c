@@ -1,6 +1,6 @@
  #include "Processa_ficheiros.h"
  
-const int name_size = 100;
+const int name_size = 1000;
 
 int Texturing(int file) {
 	int res = 0;
