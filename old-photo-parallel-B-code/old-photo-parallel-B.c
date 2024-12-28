@@ -55,7 +55,16 @@ void* Parallelize_Serial() {
     /*void* thread_ret;*/
     /*int ret_val;*/
     start_time_par = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
-    end_time_par = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
+    end_time_par   = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
+    start_time_finished_photos = (struct timespec*) malloc(n_img * sizeof(struct timespec));
+    end_time_finished_photos   = (struct timespec*) malloc(n_img * sizeof(struct timespec));
+    for (int i = 0; i < n_img; i++){
+        start_time_finished_photos[i].tv_sec = 0;
+        end_time_finished_photos[i].tv_sec = 0;
+        start_time_finished_photos[i].tv_nsec = 0;
+        end_time_finished_photos[i].tv_nsec = 0;   
+    }
+    
     pthread_create(&stats_thread, 0, Mostra_stats, 0);
     for (int i = 0; i < n_threads; i++) {
         clock_gettime(CLOCK_REALTIME, &start_time_par[i]);
@@ -467,10 +476,24 @@ void* Processa_sepia(int next_file) {
 }
 
 void* Processa_stats() {
-    //pthread_mutex_lock(&stats_mux);
+    long int total_time_nsecs = 0;
+    __intmax_t total_time_secs = 0;
     printf("Number of images processed: %d\n", n_img_processed);
     printf("Number of images to process: %d\n", n_img_to_process);
-    //pthread_mutex_unlock(&stats_mux);
+    printf("Number of images in process: %d\n", n_img - n_img_to_process - n_img_processed);
+    pthread_mutex_lock(&stats_mux);
+    for(int i = 0; i < n_img_processed; i++) {
+        if(end_time_finished_photos[i].tv_sec == 0 && end_time_finished_photos[i].tv_nsec ==0) continue;
+        struct timespec file_time = diff_timespec(&end_time_finished_photos[i], &start_time_finished_photos[i]);
+        //if (file_time.tv_nsec < 0) {
+        //continue;
+        //}
+        total_time_nsecs += file_time.tv_nsec / 3;
+        total_time_secs += file_time.tv_sec / 3;
+    }
+    pthread_mutex_unlock(&stats_mux);
+    
+    printf("Mean time of processed images: %3jd.%09ld\n", total_time_secs, total_time_nsecs);
     return (void*)0;
 }
 
@@ -481,10 +504,10 @@ void* Mostra_stats() {
     } else if (fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK) == -1) puts(" Error unblocking stdin.");
 
     int stats_request;
-    //pthread_mutex_lock(&stats_mux);
+    pthread_mutex_lock(&stats_mux);
     bool stop = stop_stats;
     bool stating = n_img_to_process && !stop;     // inner flag to close stats thread
-    //pthread_mutex_unlock(&stats_mux);
+    pthread_mutex_unlock(&stats_mux);
     while (!stop) {
         while (stating) {
             if (!stating) break;
@@ -496,10 +519,10 @@ void* Mostra_stats() {
                 //    pthread_mutex_unlock(&stats_mux);      
                 }
             } else stop = true;
-            //pthread_mutex_lock(&stats_mux);
+            pthread_mutex_lock(&stats_mux);
             stop = stop_stats;
             stating = n_img_to_process && !stop;     // inner flag to close stats thread
-            //pthread_mutex_unlock(&stats_mux);
+            pthread_mutex_unlock(&stats_mux);
             break;
         }
     }

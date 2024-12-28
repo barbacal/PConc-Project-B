@@ -16,7 +16,9 @@
 struct timespec start_time_total, end_time_total;
 struct timespec start_time_ser, end_time_ser;
 struct timespec* start_time_par;
+struct timespec* start_time_finished_photos;
 struct timespec* end_time_par;
+struct timespec* end_time_finished_photos;
 
 /* File with timings: total, serial, parallel per thread*/
 char* timing_file = 0;

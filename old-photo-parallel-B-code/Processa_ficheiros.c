@@ -60,6 +60,9 @@ int Texturing(int file) {
 }
 
 int Contrasting(int file) {
+	end_time_finished_photos[file].tv_sec = 0;
+	end_time_finished_photos[file].tv_nsec = 0;
+	clock_gettime(CLOCK_REALTIME, &start_time_finished_photos[file]);
 	int res = 0;
 	/* file name of the image to porcessed at this stage */
 	char* img_from_dir = malloc(name_size * sizeof(char));
@@ -166,6 +169,7 @@ int Sepiaing(int file) {
 		if(!write_jpeg_file(out_sepia_img, out_file_name)) fprintf(stderr, "Impossible to write %s image\n", out_file_name);
 			res = -1;
 	}
+	clock_gettime(CLOCK_REALTIME, &end_time_finished_photos[file]);
 	gdImageDestroy(out_sepia_img);
 	gdImageDestroy(in_img);
 	free(out_file_name);

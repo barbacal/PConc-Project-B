@@ -11,6 +11,9 @@
 #include <unistd.h>
 #include "image-lib.h"
 #include <stdbool.h>
+//#include <linux/time.h> //CLOCK_MONOTONIC not available in my Ubuntu PC
+#include <time.h>
+
 
 
 extern char* OLD_PHOTO_PAR_B;
@@ -20,6 +23,8 @@ extern char* TEXTURE_DIR;
 extern char* SEPIA_DIR;
 extern char* IMG_DIR;
 extern char** files;
+extern struct timespec* start_time_finished_photos;
+extern struct timespec* end_time_finished_photos;
 
 //extern struct thread_info /*thread_process*/;
 
