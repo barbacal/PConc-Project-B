@@ -56,7 +56,7 @@ void* Parallelize_Serial() {
     /*int ret_val;*/
     start_time_par = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
     end_time_par = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
-    //pthread_create(&stats_thread, 0, Mostra_stats, 0);
+    pthread_create(&stats_thread, 0, Mostra_stats, 0);
     for (int i = 0; i < n_threads; i++) {
         clock_gettime(CLOCK_REALTIME, &start_time_par[i]);
         pthread_create(&thread_id[i], 0, Processa_threads, 0);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
@@ -71,7 +71,7 @@ void* Parallelize_Serial() {
         clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
         GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
     }
-    //pthread_join(stats_thread, NULL/*&thread_ret*/);
+    pthread_join(stats_thread, NULL/*&thread_ret*/);
     pthread_mutex_destroy(&stats_mux);
     free(start_time_par);
     free(end_time_par); //falta o resto
@@ -81,33 +81,34 @@ void* Parallelize_Serial() {
 
 void* Processa_threads() {
     bool piping = false;
-pipe:
-    pthread_mutex_lock(&stats_mux);
-    if (stop_stats && !do_piping && !piping && !n_img) {
+    while (true) {
+
+        pthread_mutex_lock(&stats_mux);
+        if (stop_stats && !piping && !n_img_to_process) {
+            pthread_mutex_unlock(&stats_mux);
+            pthread_exit(NULL);
+        }
+        int file;
+        if (n_img_to_process) {
+            read(img_pipe_fd[0], &file, sizeof(file));
+            n_img_to_process--;
+            piping = true; // piping flag
+        } else piping = false; // stop piping flag
+        
+        if (n_img_to_process == 0)stop_stats = true;
         pthread_mutex_unlock(&stats_mux);
-        pthread_exit(NULL);
-    } 
-    pthread_mutex_unlock(&stats_mux);
-    int file;
-    pthread_mutex_lock(&stats_mux);
-    read(img_pipe_fd[0], &file, sizeof(file));
-    Processa_contrast(file);
-    Processa_smooth(file);
-    Processa_texture(file);
-    Processa_sepia(file);
-    n_img_processed++;
-    n_img_to_process--;
-    piping = !stop_stats && (n_img_processed < n_img);
-    if (n_img_to_process == 0) {
-        stop_stats = true;
-        piping = false;
-    }                                                                                                                                                                                        
-    if (!stop_stats && piping) {
+        
+        if (!piping) break;
+        Processa_contrast(file);
+        Processa_smooth(file);
+        Processa_texture(file);
+        Processa_sepia(file);
+       
+        pthread_mutex_lock(&stats_mux);
+        n_img_processed++;
         pthread_mutex_unlock(&stats_mux);
-        goto pipe;
     }
-    pthread_mutex_unlock(&stats_mux);  
-    pthread_exit(NULL);    
+    pthread_exit(NULL);
 }
 
 void* Check_Dirs() {
@@ -480,25 +481,25 @@ void* Mostra_stats() {
     } else if (fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK) == -1) puts(" Error unblocking stdin.");
 
     int stats_request;
-    pthread_mutex_lock(&stats_mux);
+    //pthread_mutex_lock(&stats_mux);
     bool stop = stop_stats;
     bool stating = n_img_to_process && !stop;     // inner flag to close stats thread
-    pthread_mutex_unlock(&stats_mux);
+    //pthread_mutex_unlock(&stats_mux);
     while (!stop) {
         while (stating) {
             if (!stating) break;
             if ((stats_request = getc(stdin)) != EOF) {    
                 if (stats_request != '\n') while (getc(stdin) != '\n');
                 if (toupper(stats_request) == 'S') {
-                    pthread_mutex_lock(&stats_mux);
+              //      pthread_mutex_lock(&stats_mux);
                     Processa_stats();
-                    pthread_mutex_unlock(&stats_mux);      
+                //    pthread_mutex_unlock(&stats_mux);      
                 }
             } else stop = true;
-            pthread_mutex_lock(&stats_mux);
+            //pthread_mutex_lock(&stats_mux);
             stop = stop_stats;
             stating = n_img_to_process && !stop;     // inner flag to close stats thread
-            pthread_mutex_unlock(&stats_mux);
+            //pthread_mutex_unlock(&stats_mux);
             break;
         }
     }

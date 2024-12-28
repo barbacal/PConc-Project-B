@@ -47,7 +47,7 @@ int Texturing(int file) {
 	} else {
 		puts("Texture does not exist.");
 		in_img = read_jpeg_file(img_from_dir);
-		if (!in_img) //{
+		if (!in_img)
 			printf("Impossible to read %s image\n", img_from_dir);
 			if(!write_jpeg_file(in_img, out_file_name))		
 				fprintf(stderr, "Impossible to write %s image\n", out_file_name);

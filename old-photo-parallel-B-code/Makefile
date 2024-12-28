@@ -41,5 +41,5 @@ setup_coredumps:
 coregrind:
 	make clean-all
 	make all
-	valgrind $(VALFLAGS) ./$(EXEC) $(ARGS) ./Dataset-1 4 -name;
+	valgrind $(VALFLAGS) ./$(EXEC) $(ARGS) ../Dataset-1 4 -name;
 	@echo Ran with valgrind
