@@ -83,23 +83,22 @@ void* Processa_threads() {
     bool piping = false;
 pipe:
     pthread_mutex_lock(&stats_mux);
-    if (stop_stats && !do_piping && !piping) {
+    if (stop_stats && !do_piping && !piping && !n_img) {
         pthread_mutex_unlock(&stats_mux);
         pthread_exit(NULL);
     } 
     pthread_mutex_unlock(&stats_mux);
     int file;
+    pthread_mutex_lock(&stats_mux);
     read(img_pipe_fd[0], &file, sizeof(file));
     Processa_contrast(file);
     Processa_smooth(file);
     Processa_texture(file);
     Processa_sepia(file);
-    pthread_mutex_lock(&stats_mux);
     n_img_processed++;
     n_img_to_process--;
-    if (!do_piping) piping = !stop_stats &&  n_img - n_img_processed > 1;
-    else piping = !stop_stats && (n_img_processed < n_img);
-    if (n_img_to_process == 0 /*|| !piping*/) {
+    piping = !stop_stats && (n_img_processed < n_img);
+    if (n_img_to_process == 0) {
         stop_stats = true;
         piping = false;
     }                                                                                                                                                                                        
