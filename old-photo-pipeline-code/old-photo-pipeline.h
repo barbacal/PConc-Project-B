@@ -70,7 +70,7 @@ char** Read_Files_List();
 void* Make_pipes();
 void* Processa_threads();
 void* FreeAlloc();
-void* Processa_contrast();
+void* Processa_contrast(void* arg);
 void* Processa_smooth();
 void* Processa_texture();
 void* Processa_sepia(void* arg);

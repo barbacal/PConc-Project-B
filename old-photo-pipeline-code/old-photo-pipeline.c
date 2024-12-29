@@ -67,8 +67,7 @@ void* Processa_threads() {
 
     for (int i = 0; i < n_threads; i++) {
         // printf("Stage 1 thread %d creation\n", i + 1); // Dbg purpose; to delete or uncomment
-        clock_gettime(CLOCK_REALTIME, &start_time_par[i]);
-        pthread_create(&stage1_threads[i], 0, Processa_contrast, 0);
+        pthread_create(&stage1_threads[i], 0, Processa_contrast, i);
         clock_gettime(CLOCK_REALTIME, &start_time_thrd[i][0]);
         // printf("Stage 2 thread %d creation\n", i + 1); // Dbg purpose; to delete or uncomment
         pthread_create(&stage2_threads[i], 0, Processa_smooth, 0);
@@ -347,7 +346,8 @@ void* Make_pipes() {
     return (void*)0;
 }
 
-void* Processa_contrast(){
+void* Processa_contrast(void* arg){
+    int thr_id = (int)arg;
     int notification;
     int next_file;
     read(notifier_fd[0], &notification, sizeof(notification));
@@ -355,6 +355,7 @@ void* Processa_contrast(){
     if (notification == 0) pthread_exit(NULL);
     while (notification == 1) {
         read(stg1_pipe_fd[0], &next_file, sizeof(next_file));
+        clock_gettime(CLOCK_REALTIME, &start_time_par[thr_id]);
         Contrasting(next_file);
         write(stg2_pipe_fd[1], &next_file, sizeof(next_file));
     }
