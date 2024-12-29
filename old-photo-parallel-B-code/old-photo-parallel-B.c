@@ -279,6 +279,8 @@ char** Read_Files_List() {
 
 void* FreeAlloc() {
     free(files);// falta o resto
+    free(start_time_finished_photos);
+    free(end_time_finished_photos);
     return (void*)0;
 }
 
@@ -366,7 +368,7 @@ void* FinishTimingSerial() {
     struct timespec ser_time = diff_timespec(&end_time_ser, &start_time_ser);
     FILE *fp;
     char* timing = (char*)malloc(100 * sizeof(char));
-    timing_file = (char*)malloc(100 * sizeof(char));
+    timing_file = (char*)malloc(1000 * sizeof(char));
     sprintf(timing_file, "%s%s", IMG_DIR,"/timing_B_<");
     char* str_n_threads = (char*)malloc(3 * sizeof(char));
     sprintf(str_n_threads, "%d", n_threads);
@@ -485,9 +487,6 @@ void* Processa_stats() {
     for(int i = 0; i < n_img_processed; i++) {
         if(end_time_finished_photos[i].tv_sec == 0 && end_time_finished_photos[i].tv_nsec ==0) continue;
         struct timespec file_time = diff_timespec(&end_time_finished_photos[i], &start_time_finished_photos[i]);
-        //if (file_time.tv_nsec < 0) {
-        //continue;
-        //}
         total_time_nsecs += file_time.tv_nsec / 3;
         total_time_secs += file_time.tv_sec / 3;
     }

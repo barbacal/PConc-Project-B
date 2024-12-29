@@ -13,6 +13,7 @@ Code example:
 	./old-photo-pipeline ./Dataset-1/ 7 -size
 
 Important Notes:
+	folders, directories, relative and absolute pathnames must not have neither spaces nor tabs
 	development was done In VS Code and building, cleaning and testing in a bash shell, side a side. See the code in an IDE, test the code in a shell.
 	the Makefile is prepared to build in the parent folder of old-photo-pipeline-code where the binnary is to be called.
 	'paper-texture.png' is to be in old-photo-pipeline-code.

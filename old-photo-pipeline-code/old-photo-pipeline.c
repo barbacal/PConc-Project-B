@@ -53,7 +53,13 @@ int main(int argc, char* argv[]) {
 void* Processa_threads() {
     start_time_par = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
     end_time_par = (struct timespec*) malloc(n_threads * sizeof(struct timespec));
-    // Stages to process: watermarks, Smoothing and Texturing PNGs
+    start_time_thrd = (struct timespec**) malloc(n_threads * sizeof(struct timespec*));
+    end_time_par_thrd = (struct timespec**) malloc( n_threads * sizeof(struct timespec*));
+    for(int i = 0; i < n_threads; i++) {
+        start_time_thrd[i] = (struct timespec*) malloc(4 * sizeof(struct timespec));
+        end_time_par_thrd[i] = (struct timespec*) malloc(4 * sizeof(struct timespec));
+    }
+    // Stages to process: watermarks, Smoothing and Texturing JPEGs
     pthread_t stage1_threads[n_threads]; // Contrasting 
     pthread_t stage2_threads[n_threads]; // Smoothing
     pthread_t stage3_threads[n_threads]; // Texturing
@@ -61,42 +67,20 @@ void* Processa_threads() {
 
     for (int i = 0; i < n_threads; i++) {
         // printf("Stage 1 thread %d creation\n", i + 1); // Dbg purpose; to delete or uncomment
+        clock_gettime(CLOCK_REALTIME, &start_time_par[i]);
         pthread_create(&stage1_threads[i], 0, Processa_contrast, 0);
+        clock_gettime(CLOCK_REALTIME, &start_time_thrd[i][0]);
         // printf("Stage 2 thread %d creation\n", i + 1); // Dbg purpose; to delete or uncomment
         pthread_create(&stage2_threads[i], 0, Processa_smooth, 0);
+        clock_gettime(CLOCK_REALTIME, &start_time_thrd[i][1]);
         // printf("Stage 3 thread %d creation\n", i + 1); // Dbg purpose; to delete or uncomment
         pthread_create(&stage3_threads[i], 0, Processa_texture, 0);
+        clock_gettime(CLOCK_REALTIME, &start_time_thrd[i][2]);
         // printf("Stage 4 thread %d creation\n", i + 1); // Dbg purpose; to delete or uncomment
-        pthread_create(&stage4_threads[i], 0, Processa_sepia, 0);
+        pthread_create(&stage4_threads[i], 0, Processa_sepia, i);
+        clock_gettime(CLOCK_REALTIME, &start_time_thrd[i][3]);
     }
-    /*for (int i = 0; i < n_threads; i++) {
-        //printf("%dth thread junction.\n", i + 1); // Dbg purpose; to delete
-        pthread_join(stage1_threads[i], NULL);
-        long int thr_id = pthread_self();
-        clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
-        GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
-    } 
-    for (int i = 0; i < n_threads; i++) {
-        //printf("%dth thread junction.\n", i + 1); // Dbg purpose; to delete
-        pthread_join(stage2_threads[i], NULL);
-        long int thr_id = pthread_self();
-        clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
-        GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
-    }
-    for (int i = 0; i < n_threads; i++) {
-        //printf("%dth thread junction.\n", i + 1); // Dbg purpose; to delete
-        pthread_join(stage3_threads[i], NULL);
-        long int thr_id = pthread_self();
-        clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
-        GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
-    }
-    for (int i = 0; i < n_threads; i++) {
-        //printf("%dth thread junction.\n", i + 1); // Dbg purpose; to delete
-        pthread_join(stage4_threads[i], NULL);
-        long int thr_id = pthread_self();
-        clock_gettime(CLOCK_REALTIME, &end_time_par[i]);
-        GetParallelTiming(&start_time_par[i], &end_time_par[i], thr_id);    
-    }*/
+    
     int notification = 1; //1: pipe on; 0: pipe off; double check
     int file_index = 0;
     int n_files = n_img;
@@ -110,9 +94,14 @@ void* Processa_threads() {
             write(notifier_fd[1], &notification, sizeof(notification)); //Stage 4 notifier
 
         }
-        if (n_img == 0) notification = 0;
+        if (n_img == 0) notification = 0; //Stop piping
     }
-
+    for(int j= 0; j < 4; j++) {
+        for (int i = 0; i < n_threads; i++) {
+            clock_gettime(CLOCK_REALTIME, &end_time_par_thrd[i][j]);
+            GetParallelTiming(&start_time_thrd[i][j], &end_time_par_thrd[i][j], i + j);    
+        }   
+    }
     return (void*)0;
 }
 
@@ -189,7 +178,7 @@ void* Check_Input_Args(int argc, char* argv[]) {
 }
 
 char** Read_Files_List() {
-    const int name_size = 100; // maximum size in chars of an image filename
+    const int name_size = 1000; // maximum size in chars of an image filename
     files = (char**)malloc(name_size * sizeof(char*));
     bool isFileList = true;
     FILE* fp = 0;
@@ -276,7 +265,7 @@ bool Check_for_Images() {
     bool res = false;
     int n_formats = 2;
     const char* file_format[3] = {png_file, jpg_file, jpeg_file}; //Assumes either PNG, JPG or JPEG or empty folder
-    const int name_size = 100; // maximum size in chars of an image filename
+    const int name_size = 1000; // maximum size in chars of an image filename
     char img_name[name_size];
     DIR* dir;
  loop:  dir = opendir(IMG_DIR);
@@ -314,6 +303,14 @@ bool Check_for_Images() {
 
 void* FreeAlloc() {
     free(files);
+    free(start_time_par);
+    free(end_time_par);
+    for(int i = 0; i < n_threads; i++) {
+        free(start_time_thrd[i]);
+        free(end_time_par_thrd[i]);
+    }
+    free(start_time_thrd);
+    free(end_time_par_thrd);
     return (void*)0;
 }
 
@@ -390,7 +387,8 @@ void* Processa_texture(){
     pthread_exit(NULL);
 }
 
-void* Processa_sepia(){
+void* Processa_sepia(void* arg){
+    int thr_id = (int)arg;
     int notification;
     int next_file;
     read(notifier_fd[0], &notification, sizeof(notification));
@@ -398,8 +396,10 @@ void* Processa_sepia(){
     while (notification == 1) { 
         read(stg4_pipe_fd[0], &next_file, sizeof(next_file));
         Sepiaing(next_file);
+        clock_gettime(CLOCK_REALTIME, &end_time_par[thr_id]);
+        GetParallelTimingPhotos(&start_time_par[thr_id], &end_time_par[thr_id], files[next_file]);    
         n_img--;
-    }
+    }  
     pthread_exit(NULL);
 }
 
@@ -448,8 +448,8 @@ void* FinishTimingSerial() {
     struct timespec ser_time = diff_timespec(&end_time_ser, &start_time_ser);
     FILE *fp;
     char* timing = (char*)malloc(100 * sizeof(char));
-    timing_file = (char*)malloc(100 * sizeof(char));
-    sprintf(timing_file, "%s%s%s", IMG_DIR, OLD_PHOTO_PAR_B, "/timing_");
+    timing_file = (char*)malloc(1000 * sizeof(char));
+    sprintf(timing_file, "%s%s%s", IMG_DIR, OLD_PHOTO_PAR_B, "/timing_pipeline_");
     timing_file = strcat(timing_file, "<");
     char* str_n_threads = (char*)malloc(3 * sizeof(char));
     sprintf(str_n_threads, "%d", n_threads);
@@ -494,6 +494,28 @@ void* FinishTiming() {
     return (void*)0;
 }
 
+void* GetParallelTimingPhotos(struct timespec* start, struct timespec* end, char* file) {
+    struct timespec par_time = diff_timespec(end, start);
+    char* timing = (char*)malloc(100 * sizeof(char));
+    FILE *fp;
+    fp = fopen(timing_file, "a");
+    if (!fp) {
+        fprintf(stderr, "File %s can't be appended.\n", timing_file);
+        return (void*) -1;
+    }
+    sprintf(timing, "\t'%s' \t %10jd.%09ld\n", file, par_time.tv_sec, par_time.tv_nsec);
+    //sprintf(timing, "\tpar (thr id: %ld)\t %10jd.%09ld\n", thr_id, par_time.tv_sec, par_time.tv_nsec);
+    if (fputs(timing, fp) == EOF) {
+        fprintf(stderr, "Error on writing in file %s.\n", timing_file);
+        fclose(fp);
+        fp = 0;
+        return (void*) -1;
+    }
+    fclose(fp);
+    fp = 0;
+    return (void*)0;
+}
+
 void* GetParallelTiming(struct timespec* start, struct timespec* end, long int thr_id) {
     struct timespec par_time = diff_timespec(end, start);
     char* timing = (char*)malloc(100 * sizeof(char));
@@ -503,7 +525,7 @@ void* GetParallelTiming(struct timespec* start, struct timespec* end, long int t
         fprintf(stderr, "File %s can't be appended.\n", timing_file);
         return (void*) -1;
     }
-    sprintf(timing, "\tpar \t %10jd.%09ld\n", par_time.tv_sec, par_time.tv_nsec);
+    sprintf(timing, "\tpar%d \t %10jd.%09ld\n", thr_id, par_time.tv_sec, par_time.tv_nsec);
     //sprintf(timing, "\tpar (thr id: %ld)\t %10jd.%09ld\n", thr_id, par_time.tv_sec, par_time.tv_nsec);
     if (fputs(timing, fp) == EOF) {
         fprintf(stderr, "Error on writing in file %s.\n", timing_file);

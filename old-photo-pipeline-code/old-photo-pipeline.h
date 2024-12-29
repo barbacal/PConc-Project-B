@@ -17,6 +17,8 @@ struct timespec start_time_total, end_time_total;
 struct timespec start_time_ser, end_time_ser;
 struct timespec* start_time_par;
 struct timespec* end_time_par;
+struct timespec** start_time_thrd;
+struct timespec** end_time_par_thrd;
 
 /* File with timings: total, serial, parallel per thread*/
 char* timing_file = 0;
@@ -39,7 +41,7 @@ char* IMG_DIR = 0;
 
 //pthread_barrier_t bar; // barrier for threads; experimental for for self learning
 
-int n_threads = 0;                // Default threads (besides main)
+int n_threads = 1;                // Default threads (besides main)
 const char* jpg_file = ".jpg";          // type of image format (in this case JPG)
 const char* jpeg_file = ".jpeg";        // type of image format (in this case JPEG)
 const char* png_file = ".png";          // type of image format (in this case PNG)
@@ -71,7 +73,7 @@ void* FreeAlloc();
 void* Processa_contrast();
 void* Processa_smooth();
 void* Processa_texture();
-void* Processa_sepia();
+void* Processa_sepia(void* arg);
 bool Check_for_Images();
 _Bool Check_for_Extension(const char* filename, const char* ext);
 void* OrderFiles();
@@ -80,4 +82,5 @@ int Compare_Name(const void* a, const void* b);
 void* FinishTiming();
 void* StartTiming();
 void* FinishTimingSerial();
+void* GetParallelTimingPhotos(struct timespec* start, struct timespec* end, char* file);
 void* GetParallelTiming(struct timespec* start, struct timespec* end, long int thr_id);

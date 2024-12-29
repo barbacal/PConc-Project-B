@@ -260,7 +260,7 @@ int create_directory(char * dir_name){
 		//if (mkdir(dir_name, 0777)!=0){
 		int res;
 		//fprintf(stderr, "%s: dir_name\n", dir_name);
-		char mk_dir[100];
+		char mk_dir[1000];
 		sprintf(mk_dir, "mkdir -p %s", dir_name);
 		if ((res = system(mk_dir)) != 0) {
 			fprintf(stderr, "'%s': Error creating folder.\n", dir_name);
