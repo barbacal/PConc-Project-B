@@ -450,7 +450,7 @@ void* FinishTimingSerial() {
     FILE *fp;
     char* timing = (char*)malloc(100 * sizeof(char));
     timing_file = (char*)malloc(1000 * sizeof(char));
-    sprintf(timing_file, "%s%s%s", IMG_DIR, OLD_PHOTO_PAR_B, "/timing_pipeline_");
+    sprintf(timing_file, "%s%s", IMG_DIR, "/timing_pipeline_");
     timing_file = strcat(timing_file, "<");
     char* str_n_threads = (char*)malloc(3 * sizeof(char));
     sprintf(str_n_threads, "%d", n_threads);

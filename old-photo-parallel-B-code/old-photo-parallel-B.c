@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
     Check_Input_Args(argc, argv);
     Check_Dirs();
     files = Read_Files_List();
-    puts("Before sorting:)"); // Dbg purpose; to delete or uncomment  to check
+    /*puts("Before sorting:)"); // Dbg purpose; to delete or uncomment  to check
     for (int i = 0; i < n_img; i++)
     {
      printf("'%s'", files[i]);
@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     {
      printf("'%s'", files[i]);
     }
-    puts("\n");
+    puts("\n");*/
     Make_pipe();
     FinishTimingSerial();
     Parallelize_Serial();
@@ -441,10 +441,10 @@ void* Make_pipe() {
         printf("error creating the pipe. Exiting.\n");
         exit(-1);
     }
-    if (n_threads > n_img){
+    /*if (n_threads > n_img){
         printf("Less images than threads. Processing %d threads, one per image.\n", n_img);
         n_threads = n_img;
-    }
+    }*/
     int file_index = 0;
     n_img_to_process = n_img;
     int counter = n_img;

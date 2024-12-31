@@ -21,7 +21,7 @@ int Texturing(int file) {
 	/* output image */
 	gdImagePtr out_texture_img;
 	bool texture_exists = true; 
-    texture_img = read_png_file("./old-photo-pipeline-code/paper-texture.png");
+    texture_img = read_png_file("./old-photo-parallel-B-code/paper-texture.png");
 	if(!texture_img) {
 		puts("No Texture...");
 		fprintf(stderr, "Impossible to read %s image. Skipping.\n", "paper-texture.png");
