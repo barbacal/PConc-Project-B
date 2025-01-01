@@ -301,6 +301,7 @@ bool Check_for_Images() {
 
 
 void* FreeAlloc() {
+    for (int i = 0 ; i < n_threads ; i++) free(files[i]);
     free(files);
     free(start_time_par);
     free(end_time_par);
@@ -492,6 +493,8 @@ void* FinishTiming() {
     }
     fclose(fp);
     fp = 0;
+    free(timing);
+    free(timing_file);
     return (void*)0;
 }
 

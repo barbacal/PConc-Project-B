@@ -278,7 +278,8 @@ char** Read_Files_List() {
 }
 
 void* FreeAlloc() {
-    free(files);// falta o resto
+    for (int i = 0 ; i < n_threads ; i++) free(files[i]);
+    free(files);
     free(start_time_finished_photos);
     free(end_time_finished_photos);
     return (void*)0;
@@ -410,6 +411,8 @@ void* FinishTiming() {
     }
     fclose(fp);
     fp = 0;
+    free(timing);
+    free(timing_file);
     return (void*)0;
 }
 
@@ -480,17 +483,17 @@ void* Processa_sepia(int next_file) {
 void* Processa_stats() {
     long int total_time_nsecs = 0;
     __intmax_t total_time_secs = 0;
+    pthread_mutex_lock(&stats_mux);
     printf("Number of images processed: %d\n", n_img_processed);
     printf("Number of images to process: %d\n", n_img_to_process);
     printf("Number of images in process: %d\n", n_img - n_img_to_process - n_img_processed);
-    pthread_mutex_lock(&stats_mux);
+    pthread_mutex_unlock(&stats_mux);
     for(int i = 0; i < n_img_processed; i++) {
         if(end_time_finished_photos[i].tv_sec == 0 && end_time_finished_photos[i].tv_nsec ==0) continue;
         struct timespec file_time = diff_timespec(&end_time_finished_photos[i], &start_time_finished_photos[i]);
         total_time_nsecs += file_time.tv_nsec / 3;
         total_time_secs += file_time.tv_sec / 3;
     }
-    pthread_mutex_unlock(&stats_mux);
     
     printf("Mean time of processed images: %3jd.%09ld\n", total_time_secs, total_time_nsecs);
     return (void*)0;
@@ -500,29 +503,28 @@ void* Mostra_stats() {
     int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     if (flags == -1) {
         puts("Error fetching stdin flags. No nonblocking stdin.");
-    } else if (fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK) == -1) puts(" Error unblocking stdin.");
+        pthread_exit(NULL);
+    } else if (fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK) == -1) {
+        puts(" Error unblocking stdin.");
+        pthread_exit(NULL);
+    }
 
     int stats_request;
-    pthread_mutex_lock(&stats_mux);
-    bool stop = stop_stats;
-    bool stating = n_img_to_process && !stop;     // inner flag to close stats thread
-    pthread_mutex_unlock(&stats_mux);
-    while (!stop) {
-        while (stating) {
-            if (!stating) break;
-            if ((stats_request = getc(stdin)) != EOF) {    
-                if (stats_request != '\n') while (getc(stdin) != '\n');
-                if (toupper(stats_request) == 'S') {
-              //      pthread_mutex_lock(&stats_mux);
-                    Processa_stats();
-                //    pthread_mutex_unlock(&stats_mux);      
-                }
-            } else stop = true;
-            pthread_mutex_lock(&stats_mux);
-            stop = stop_stats;
-            stating = n_img_to_process && !stop;     // inner flag to close stats thread
-            pthread_mutex_unlock(&stats_mux);
-            break;
+    while (true) {
+        pthread_mutex_lock(&stats_mux);
+        bool stop = stop_stats;
+        bool stating = n_img_to_process > 0 && !stop;     // inner flag to close stats thread
+        pthread_mutex_unlock(&stats_mux);
+        if (!stating) {puts("BREAK!");break;}
+        stats_request = getc(stdin);
+        if (stats_request != EOF) {        
+            if (stats_request != '\n') while (getc(stdin) != '\n');
+            printf("Received input: %c\n", stats_request);
+            if (toupper(stats_request) == 'S') {
+                //pthread_mutex_lock(&stats_mux);
+                Processa_stats();
+                //pthread_mutex_lock(&stats_mux);
+            }
         }
     }
     return (void*)0;
