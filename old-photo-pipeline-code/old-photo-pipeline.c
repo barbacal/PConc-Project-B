@@ -59,7 +59,7 @@ void* Processa_threads() {
         start_time_thrd[i] = (struct timespec*) malloc(4 * sizeof(struct timespec));
         end_time_par_thrd[i] = (struct timespec*) malloc(4 * sizeof(struct timespec));
     }
-    // Stages to process: watermarks, Smoothing and Texturing JPEGs
+    // Stages to process: Contrasting, Smoothing, Texturing and Sepiaing JPEgs
     pthread_t stage1_threads[n_threads]; // Contrasting 
     pthread_t stage2_threads[n_threads]; // Smoothing
     pthread_t stage3_threads[n_threads]; // Texturing

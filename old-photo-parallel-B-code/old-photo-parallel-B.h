@@ -41,6 +41,7 @@ char* IMG_DIR = 0;
 
 bool do_piping = true; // Flag to pipe
 pthread_mutex_t stats_mux = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t process_mux = PTHREAD_MUTEX_INITIALIZER;
 
 int n_threads = 1;                // Default threads (besides main)
 const char* jpg_file = ".jpg";          // type of image format (in this case JPG)

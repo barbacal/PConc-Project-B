@@ -82,6 +82,7 @@ void* Parallelize_Serial() {
     }
     pthread_join(stats_thread, NULL/*&thread_ret*/);
     pthread_mutex_destroy(&stats_mux);
+    pthread_mutex_destroy(&process_mux);
     free(start_time_par);
     free(end_time_par); //falta o resto
     //threads = 0;
@@ -92,9 +93,9 @@ void* Processa_threads() {
     bool piping = false;
     while (true) {
 
-        pthread_mutex_lock(&stats_mux);
+        pthread_mutex_lock(&process_mux);
         if (stop_stats && !piping && !n_img_to_process) {
-            pthread_mutex_unlock(&stats_mux);
+            pthread_mutex_unlock(&process_mux);
             pthread_exit(NULL);
         }
         int file;
@@ -105,7 +106,7 @@ void* Processa_threads() {
         } else piping = false; // stop piping flag
         
         if (n_img_to_process == 0)stop_stats = true;
-        pthread_mutex_unlock(&stats_mux);
+        pthread_mutex_unlock(&process_mux);
         
         if (!piping) break;
         Processa_contrast(file);
@@ -113,9 +114,9 @@ void* Processa_threads() {
         Processa_texture(file);
         Processa_sepia(file);
        
-        pthread_mutex_lock(&stats_mux);
+        pthread_mutex_lock(&process_mux);
         n_img_processed++;
-        pthread_mutex_unlock(&stats_mux);
+        pthread_mutex_unlock(&process_mux);
     }
     pthread_exit(NULL);
 }
@@ -487,14 +488,13 @@ void* Processa_stats() {
     printf("Number of images processed: %d\n", n_img_processed);
     printf("Number of images to process: %d\n", n_img_to_process);
     printf("Number of images in process: %d\n", n_img - n_img_to_process - n_img_processed);
-    pthread_mutex_unlock(&stats_mux);
     for(int i = 0; i < n_img_processed; i++) {
         if(end_time_finished_photos[i].tv_sec == 0 && end_time_finished_photos[i].tv_nsec ==0) continue;
         struct timespec file_time = diff_timespec(&end_time_finished_photos[i], &start_time_finished_photos[i]);
         total_time_nsecs += file_time.tv_nsec / 3;
         total_time_secs += file_time.tv_sec / 3;
     }
-    
+    pthread_mutex_unlock(&stats_mux);
     printf("Mean time of processed images: %3jd.%09ld\n", total_time_secs, total_time_nsecs);
     return (void*)0;
 }
@@ -515,7 +515,7 @@ void* Mostra_stats() {
         bool stop = stop_stats;
         bool stating = n_img_to_process > 0 && !stop;     // inner flag to close stats thread
         pthread_mutex_unlock(&stats_mux);
-        if (!stating) {puts("BREAK!");break;}
+        if (!stating) {puts("No more stats to do.");break;}
         stats_request = getc(stdin);
         if (stats_request != EOF) {        
             if (stats_request != '\n') while (getc(stdin) != '\n');
